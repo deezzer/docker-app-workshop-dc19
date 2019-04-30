@@ -35,7 +35,7 @@ For this exercise, we are going to instrument only the `vote` and `results` serv
 
 As we learned in the previous exercise, we can add parameters to modify our compose file and allow overrides at deploy time. Since the compose file has to be rendered, the capability to disable a service was added.
 
-Starting with compose schema version ZZZ, any compose file can include extension fields, which all start with `x-`. If a service contains a `x-enabled` field, Docker App will only include that service if it's value is "truthy." For example...
+Starting with compose schema version 3.4, any compose file can include extension fields, which all start with `x-`. If a service contains a `x-enabled` field, Docker App will only include that service if it's value is "truthy." For example...
 
 ```yaml
 services:
@@ -76,27 +76,39 @@ To update the vote and results services, let's do the following:
 
 3. Do the same thing for the `results` service, but use `results.enabled` as the parameter name.
 
-4. Use the `docker app render` command to set the `vote.enabled` parameter to false. You'll see that the compose file no longer contains the `vote` service!
+4. Use the `docker app inspect` command and set the `vote.enabled` parameter to false. You'll see that the `vote` service is not included, as well as the `vote.enabled` parameter is set to false.
 
     <details>
       <summary>Sample Output</summary>
 
     ```console
-    $ docker app render -s vote.enabled=false
-    version: "3.7"
-    services:
-      redis:
-        ...
-      worker:
-        ...
-      db:
-        ...
-      results:
-        ...
-    networks:
-      ...
-    volumes:
-      ...
+    $ docker app inspect -s vote.enabled=false
+    voting-app 0.1.0
+
+    Maintained by: root
+
+    Services (4) Replicas Ports Image
+    ------------ -------- ----- -----
+    results      1        5001  mikesir87/examplevotingapp_result
+    redis        1              redis:alpine
+    db           1              postgres:9.4
+    worker       1              dockersamples/examplevotingapp_worker
+
+    Networks (2)
+    ------------
+    backend
+    frontend
+
+    Volume (1)
+    ----------
+    db-data
+
+    Parameters (4)  Value
+    --------------  -----
+    optionA         Cats
+    optionB         Dogs
+    results.enabled true
+    vote.enabled    false
     ```
     </details>
 
@@ -144,6 +156,7 @@ Remember that `docker app render` can render a compose file. The Docker Compose 
 
 6. Let's build our new image and push it to Docker Hub. Tag the image using `[your-docker-hub-username]/updated-vote-app`.
 
+    ```console
     $ cd vote
     $ docker build -t mikesir87/updated-vote-app .
     ```
