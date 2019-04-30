@@ -22,14 +22,14 @@ By the end of this exercise, you will have:
 
 ## Docker App Parameters
 
-In addition to using environment variables, Docker App allows you to define parameters for an application that can be overridden at deploy-time. Examples of parameters might include port mappings, label definitions, or network names. _Almost_ everything in the Docker App compose file can be parameterized, except for the image names.
+In addition to using environment variables, Docker App allows you to define parameters for an application that can be overridden at deploy-time. Examples of parameters might include port mappings, cpu/memory limits, number of replicas, label definitions, or network names. _Almost_ everything in the Docker App compose file can be parameterized, **except for the image names**.
 
 
 ## Using a Parameter to Change Voting Options
 
 By default, the vote and results services let you vote between Dogs and Cats. However, wouldn't it be neat if we could change that? Conveniently, both the `vote` and `results` services allow the definition of two environment variables (`OPTION_A` and `OPTION_B`) to let us change the voting choices. This sounds like a great opportunity for parameters!
 
-1. In both the `vote` and `results` services, add environment variables named `OPTION_A` and `OPTION_B` with a value of `${optionA}` and `${optionB}`. The values are simply placeholders for the parameters.
+1. In both the `vote` and `results` services, add environment variables named `OPTION_A` and `OPTION_B` with a value of `${options.A}` and `${options.B}`. The values are simply placeholders for the parameters.
 
     <details>
       <summary>Solution</summary>
@@ -38,12 +38,12 @@ By default, the vote and results services let you vote between Dogs and Cats. Ho
     services:
       vote:
         environment:
-          OPTION_A: ${optionA}
-          OPTION_B: ${optionB}
+          OPTION_A: ${options.A}
+          OPTION_B: ${options.B}
       results:
         environment:
-          OPTION_A: ${optionA}
-          OPTION_B: ${optionB}
+          OPTION_A: ${options.A}
+          OPTION_B: ${options.B}
     ```
     </details>
 
@@ -54,20 +54,21 @@ By default, the vote and results services let you vote between Dogs and Cats. Ho
     
     ```console
     $ docker app inspect
-    inspect failed: Action "com.docker.app.inspect" failed: failed to load Compose file: invalid interpolation format for services.vote.environment.OPTION_A: "required variable optionA is missing a value". You may need to escape any $ with another $.
+    inspect failed: Action "com.docker.app.inspect" failed: failed to load Compose file: invalid interpolation format for services.vote.environment.OPTIONS_A: "required variable options.A is missing a value". You may need to escape any $ with another $.
     ```
     </details>
 
-    What happened? The command fails because "required variable optionA is missing a value." In other words, **all parameters are required to have default values.** Those default values are specified in the `parameters.yml` file.
+    What happened? The command fails because "required variable options.A is missing a value." In other words, **all parameters are required to have default values.** Those default values are specified in the `parameters.yml` file.
 
-3. Specify the default values for `optionA` and `optionB` in the `parameters.yml` file. Let's set `optionA` to "Cats" and `optionB` to "Dogs". Remember that this file is a YAML file.
+3. Specify the default values for `options.A` and `options.B` in the `parameters.yml` file. Let's set `options.A` to "Cats" and `options.B` to "Dogs". Remember that this file is a YAML file.
 
     <details>
       <summary>Solution</summary>
     
     ```yaml
-    optionA: Cats
-    optionB: Dogs
+    options:
+      A: Cats
+      B: Dogs
     ```
     </details>
 
@@ -101,18 +102,18 @@ By default, the vote and results services let you vote between Dogs and Cats. Ho
 
     Parameters (2) Value
     -------------- -----
-    optionA        Cats
-    optionB        Dogs
+    options.A      Cats
+    options.B      Dogs
     ```
     </details>
 
-5. Now, try running the same `docker app inspect`, but add the `-s` flag to set optionA to "Moby" and optionB to "Molly". You should see the parameter values now have the replaced values.
+5. Now, try running the same `docker app inspect`, but add the `-s` flag to set options.A to "Moby" and optionB to "Molly". You should see the parameter values now have the replaced values.
 
     <details>
       <summary>Full output</summary>
     
     ```console
-    $ docker app inspect -s optionA=Moby -s optionB=Molly
+    $ docker app inspect -s options.A=Moby -s options.B=Molly
     voting-app 0.1.0
 
     Maintained by: root
@@ -136,18 +137,18 @@ By default, the vote and results services let you vote between Dogs and Cats. Ho
 
     Parameters (2) Value
     -------------- -----
-    optionA        Moby
-    optionB        Molly
+    options.A      Moby
+    options.B      Molly
     ```
     </details>
 
-6. At this point, go ahead and deploy the Docker App with these parameters (optionA=Moby and optionB=Molly)
+6. At this point, go ahead and deploy the Docker App with these parameters (options.A=Moby and options.B=Molly)
 
     <details>
       <summary>Full output</summary>
     
     ```console
-    $ docker app deploy voting-app -s optionA=Moby -s optionB=Molly --target-context=swarm
+    $ docker app deploy voting-app -s options.A=Moby -s options.B=Molly --target-context=swarm
     Creating network back-tier
     Creating network front-tier
     Creating service voting-app_redis
@@ -166,13 +167,13 @@ By default, the vote and results services let you vote between Dogs and Cats. Ho
 
 With the app deployed, let's change the settings by "upgrading" the application bundle. To do so, we can use the `docker app upgrade` command. While we will change settings in the upgrade here, you can use this command to actually deploy an updated version of the app.
 
-1. Let's pretend that Moby had gotten more votes, but we really want Molly to win (since she's cuter anyways)! Let's swap the values, making `optionA=Molly` and `optionB=Moby`.
+1. Let's pretend that Moby had gotten more votes, but we really want Molly to win (since she's cuter anyways)! Let's swap the values, making `options.A=Molly` and `options.B=Moby`.
 
     <details>
       <summary>Solution/Output</summary>
     
     ```console
-    $ docker app upgrade voting-app -s optionA=Molly -s optionB=Moby --target-context=swarm
+    $ docker app upgrade voting-app -s options.A=Molly -s options.B=Moby --target-context=swarm
     Updating service voting-app_results (id: tpugiytt4eq9p88lvb8900pmq)
     Updating service voting-app_vote (id: d49hxltgvg5faie0kc735oy42)
     Updating service voting-app_redis (id: x9hpof20yumf2gv3mbbd9g1i5)
